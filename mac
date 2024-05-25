@@ -1,0 +1,425 @@
+#!/bin/bash
+
+# Welcome to Tengkera's laptop script!
+# Be prepared to turn your laptop (or desktop, no haters here)
+# into an awesome development machine.
+
+# shellcheck disable=SC2154
+trap 'ret=$?; test $ret -ne 0 && printf "failed\n\n" >&2; exit $ret' EXIT
+
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -e
+
+fancy_echo() {
+  local fmt="$1"; shift
+
+  # shellcheck disable=SC2059
+  printf "\n$fmt\n" "$@"
+}
+
+pre_setup() {
+  if [ ! -d "$HOME/.bin/" ]; then
+    mkdir "$HOME/.bin"
+  fi
+
+  if [ ! -f "$HOME/.zshrc" ]; then
+    touch "$HOME/.zshrc"
+  fi
+
+  if [ ! -f "$HOME/.Brewfile" ]; then
+    touch "$HOME/.Brewfile"
+  fi
+
+  # shellcheck disable=SC2016
+  append_to_zshrc 'export PATH="$HOME/.bin:$PATH"'
+
+  # Determine Homebrew prefix
+  ARCH="$(uname -m)"
+  if [ "$ARCH" = "arm64" ]; then
+    HOMEBREW_PREFIX="/opt/homebrew"
+  else
+    HOMEBREW_PREFIX="/usr/local"
+  fi
+}
+
+append_to_zshrc() {
+  local text="$1" zshrc
+  local skip_new_line="${2:-0}"
+
+  if [ -w "$HOME/.zshrc.local" ]; then
+    zshrc="$HOME/.zshrc.local"
+  else
+    zshrc="$HOME/.zshrc"
+  fi
+
+  if ! grep -Fqs "$text" "$zshrc"; then
+    if [ "$skip_new_line" -eq 1 ]; then
+      printf "%s\n" "$text" >> "$zshrc"
+    else
+      printf "\n%s\n" "$text" >> "$zshrc"
+    fi
+  fi
+}
+
+prepend_to_zshrc() {
+  local text="$1" zshrc
+
+  if [ -w "$HOME/.zshrc.local" ]; then
+    zshrc="$HOME/.zshrc.local"
+  else
+    zshrc="$HOME/.zshrc"
+  fi
+
+  echo -e "$text\n\n$(cat $zshrc)" > $zshrc
+}
+
+config_zsh() {
+  read -r -p "Do you want to install Zsh's extensions? [Y|n] " response
+
+  if [[ ! $response =~ (n|no|N) ]];then
+    sudo chsh -s $(which zsh)
+
+    fancy_echo "Installing Oh my Zsh"
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" "" --unattended
+
+    if [ ! -d ~/.zsh/zsh-defer ]; then
+      git clone https://github.com/romkatv/zsh-defer.git ~/.zsh/zsh-defer
+      prepend_to_zshrc 'source ~/.zsh/zsh-defer/zsh-defer.plugin.zsh'
+    fi
+    if [ ! -d ~/.zsh/zsh-autosuggestions ]; then
+      git clone https://github.com/zsh-users/zsh-autosuggestions.git ~/.zsh/zsh-autosuggestions
+      prepend_to_zshrc 'source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh'
+    fi
+    if [ ! -d ~/.zsh/zsh-syntax-highlighting ]; then
+      git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.zsh/zsh-syntax-highlighting
+      prepend_to_zshrc 'source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh'
+    fi
+    if [ ! -d ~/.oh-my-zsh/custom/plugins/zsh-completions ]; then
+      git clone https://github.com/zsh-users/zsh-completions.git ~/.oh-my-zsh/custom/plugins/zsh-completions
+      prepend_to_zshrc 'fpath+=~/.oh-my-zsh/custom/plugins/zsh-completions/src'
+    fi
+    if [ ! -d ~/.oh-my-zsh/custom/themes/spaceship-prompt/ ]; then
+      git clone https://github.com/spaceship-prompt/spaceship-prompt.git ~/.oh-my-zsh/custom/themes/spaceship-prompt --depth=1
+      ln -s ~/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme
+      sed -i '' 's/ZSH_THEME=.*/ZSH_THEME="spaceship"/' ~/.zshrc
+    fi
+
+    prepend_to_zshrc 'ZSH_DISABLE_COMPFIX=true'
+
+    # shellcheck disable=SC2016
+    append_to_zshrc 'export PATH="$HOME/.bin:$PATH"'
+
+    zsh_config_homebrew
+
+    # shellcheck disable=SC2016
+    append_to_zshrc 'export PATH=~/.asdf/shims:$PATH'
+
+    fancy_echo "Configured Zsh"
+  fi
+}
+
+gem_install_or_update() {
+  if gem list "$1" --installed > /dev/null; then
+    gem update "$@"
+  else
+    gem install "$@"
+  fi
+}
+
+install_homebrew() {
+  if ! command -v brew >/dev/null; then
+    fancy_echo "Installing Homebrew ..."
+      /bin/bash -c \
+        "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+      zsh_config_homebrew
+
+      export PATH="$HOMEBREW_PREFIX/bin:$PATH"
+  fi
+
+  if brew list | grep -Fq brew-cask; then
+    fancy_echo "Uninstalling old Homebrew-Cask ..."
+    brew uninstall --force brew-cask
+  fi
+}
+
+zsh_config_homebrew() {
+  fancy_echo "Adding brew to zshrc automatically..."
+  append_to_zshrc "eval \"\$($HOMEBREW_PREFIX/bin/brew shellenv)\""
+}
+
+install_asdf() {
+  fancy_echo "Configuring asdf version manager ..."
+  if [ ! -d "$HOME/.asdf" ]; then
+    brew install asdf
+
+    # shellcheck disable=SC2016
+    append_to_zshrc 'export PATH=~/.asdf/shims:$PATH'
+
+    append_to_zshrc "source $(brew --prefix asdf)/libexec/asdf.sh" 1
+  fi
+}
+
+add_or_update_asdf_plugin() {
+  local name="$1"
+  local url="$2"
+
+  if ! asdf plugin-list | grep -Fq "$name"; then
+    asdf plugin-add "$name" "$url"
+  else
+    asdf plugin-update "$name"
+  fi
+}
+
+install_asdf_language() {
+  local language="$1"
+  local regex_pattern="$2"
+  local version
+
+  if [ -z "$regex_pattern" ]; then
+    regex_pattern="^\d+.\d+.?\d?$"
+  fi
+
+  version="$(asdf list-all "$language" | grep -E "$regex_pattern" | tail -1)"
+
+  if ! asdf list "$language" | grep -Fq "$version"; then
+    asdf install "$language" "$version"
+    asdf global "$language" "$version"
+  fi
+}
+
+install_asdf_ruby() {
+  # shellcheck disable=SC1090
+  . "$(brew --prefix asdf)/libexec/asdf.sh"
+  add_or_update_asdf_plugin "ruby" "https://github.com/asdf-vm/asdf-ruby.git"
+
+  fancy_echo "Installing latest Ruby ..."
+  install_asdf_language "ruby"
+  gem update --system
+  number_of_cores=$(sysctl -n hw.ncpu)
+  bundle config --global jobs $((number_of_cores - 1))
+}
+
+install_asdf_nodejs() {
+  # shellcheck disable=SC1090
+  . "$(brew --prefix asdf)/libexec/asdf.sh"
+  add_or_update_asdf_plugin "nodejs" "https://github.com/asdf-vm/asdf-nodejs.git"
+
+  fancy_echo "Installing latest Node ..."
+  install_asdf_language "nodejs"
+}
+
+install_asdf_erlang() {
+  # shellcheck disable=SC1090
+  . "$(brew --prefix asdf)/libexec/asdf.sh"
+  add_or_update_asdf_plugin "erlang" "https://github.com/asdf-vm/asdf-erlang.git"
+
+  fancy_echo "Installing latest Erlang ..."
+  install_asdf_language "erlang"
+}
+
+install_asdf_elixir() {
+  # shellcheck disable=SC1090
+  . "$(brew --prefix asdf)/libexec/asdf.sh"
+  add_or_update_asdf_plugin "elixir" "https://github.com/asdf-vm/asdf-elixir.git"
+
+  fancy_echo "Installing latest Elixir ..."
+  install_asdf_language "elixir" "^\d+.\d+.?\d+?-otp-\d+$"
+}
+
+install_asdf_golang() {
+  # shellcheck disable=SC1090
+  . "$(brew --prefix asdf)/libexec/asdf.sh"
+  add_or_update_asdf_plugin "golang" "https://github.com/asdf-community/asdf-golang.git"
+
+  fancy_echo "Installing latest Go ..."
+  install_asdf_language "golang" "^\d+.\d+.?\d+?-otp-\d+$"
+}
+
+install_asdf_python() {
+  # shellcheck disable=SC1090
+  . "$(brew --prefix asdf)/libexec/asdf.sh"
+  add_or_update_asdf_plugin "python" "https://github.com/asdf-community/asdf-python.git"
+  
+  fancy_echo "Installing latest Python ..."
+  install_asdf_language "python" "^\d+.\d+.?\d+?-otp-\d+$"
+}
+
+append_general_dependencies() {
+  fancy_echo "Appending general dependencies to Brewfile"
+
+  tee "$HOME/.Brewfile" <<-EOF
+    # General
+    tap "thoughtbot/formulae"
+    tap "homebrew/services"
+    tap "universal-ctags/universal-ctags"
+    tap "github/gh"
+
+    # mas-cli to install macOS apps
+    brew "mas"
+
+    # General apps
+    cask "slack" unless File.directory?("/Applications/Slack.app")
+    cask "brave-browser" unless File.directory?("/Applications/Brave Browser.app")
+    cask "1password" unless File.directory?("/Applications/1Password 7.app")
+    cask "1password-cli"
+    cask "postman" unless File.directory?("/Applications/Postman.app")
+    cask "iterm2" unless File.directory?("/Applications/iTerm.app")
+    cask "sourcetree" unless File.directory?("/Applications/Sourcetree.app")
+    cask "keybase" unless File.directory?("/Applications/Keybase.app")
+    cask "tableplus" unless File.directory?("/Applications/TablePlus.app")
+
+    # Unix
+    brew "universal-ctags", args: ["HEAD"]
+    brew "git"
+    brew "openssl"
+    brew "gpg"
+    brew "zsh"
+    brew "tree"
+    brew "ripgrep"
+    brew "lazygit"
+
+    # GitHub extensions
+    brew "gh"
+    cask "github" unless File.directory?("/Applications/GitHub Desktop.app")
+    brew "git-lfs"
+
+    # Editor
+    cask "visual-studio-code" unless File.directory?("/Applications/Visual Studio Code.app")
+    brew "nvim"
+
+    # Programming language prerequisites and package managers
+    brew "libyaml" # should come after openssl
+    brew "coreutils"
+EOF
+
+  if [ "$ARCH" != "arm64" ]; then
+    append_general_intel_dependencies
+  fi
+}
+
+append_general_intel_dependencies() {
+  fancy_echo "Appending web's dependencies to Brewfile"
+
+  tee -a "$HOME/.Brewfile" <<-EOF
+    # General apps
+    # Fill here
+EOF
+}
+
+append_web_dependencies() {
+  fancy_echo "Appending web's dependencies to Brewfile"
+
+  tee -a "$HOME/.Brewfile" <<-EOF
+    # Web
+    tap "phrase/brewed"
+
+    # DB
+    brew "redis"
+    brew "postgresql@16"
+
+    # Devops
+    cask "docker"
+    brew "awscli"
+
+    # Image manipulation
+    brew "imagemagick"
+
+    # Others
+    brew "yarn"
+    brew "phrase"
+    brew "libpq"
+EOF
+
+  append_to_zshrc 'export PATH="/opt/homebrew/opt/libpq/bin:$PATH"'
+}
+
+append_ios_dependencies() {
+  fancy_echo "Appending iOS's dependencies to Brewfile"
+
+  tee -a "$HOME/.Brewfile" <<-EOF
+    # iOS
+    brew "cocoapods"
+    cask "figma"
+    cask "proxyman"
+    mas "XCode", id: 497799835
+EOF
+}
+
+append_android_dependencies() {
+  fancy_echo "Appending Android's dependencies to Brewfile"
+
+  tee -a "$HOME/.Brewfile" <<-EOF
+    # Android
+    cask "temurin"
+    cask "android-studio"
+    cask "android-sdk"
+EOF
+}
+
+install_dependencies() {
+  fancy_echo "Updating Homebrew formulae ..."
+  brew update --force # https://github.com/Homebrew/brew/issues/1151
+
+  fancy_echo "Installing dependencies"
+  brew bundle --global --verbose --no-upgrade
+
+  fancy_echo "Installed dependencies"
+}
+
+install_laptop_local() {
+  if [ -f "$HOME/.laptop.local" ]; then
+    fancy_echo "Running your customizations from ~/.laptop.local ..."
+    # shellcheck disable=SC1090
+    . "$HOME/.laptop.local"
+  fi
+}
+
+install() {
+  read -r -p "Do you want to install Web's dependencies? [y|N] " web_dep
+  read -r -p "Do you want to install iOS's dependencies? [y|N] " ios_dep
+  read -r -p "Do you want to install Android's dependencies? [y|N] " android_dep
+
+  pre_setup
+  install_homebrew
+
+  append_general_dependencies
+
+  if [[ $web_dep =~ (y|yes|Y) ]];then
+    append_web_dependencies
+  fi
+
+  if [[ $ios_dep =~ (y|yes|Y) ]];then
+    append_ios_dependencies
+  fi
+
+  if [[ $android_dep =~ (y|yes|Y) ]];then
+    append_android_dependencies
+  fi
+
+  install_dependencies
+
+  if [[ $web_dep =~ (y|yes|Y) ]];then
+    install_asdf
+    install_asdf_ruby
+    install_asdf_nodejs
+    install_asdf_erlang
+    install_asdf_elixir
+    install_asdf_python
+    install_asdf_golang
+  fi
+
+  install_laptop_local
+
+  brew cleanup
+
+  brew analytics off
+}
+
+# Run
+install
+
+# Zsh extensions
+config_zsh
+
+fancy_echo "Installation successful"
