@@ -204,7 +204,7 @@ for more customization examples.
 Your last Laptop run will be saved to `~/laptop.log`.
 Read through it to see if you can debug the issue yourself.
 If not, copy the lines where the script failed into a
-[new GitHub Issue](https://github.com/nimblehq/laptop/issues/new) for us.
+[new GitHub Issue](https://github.com/Tranquerah/laptop-setup/issues/new) for us.
 Or, attach the whole log file as an attachment.
 
 ## Contributing
@@ -229,15 +229,8 @@ and may be redistributed under the terms specified in the [LICENSE] file.
 
 ## About
 
-![Nimble](https://assets.nimblehq.co/logo/dark/logo-dark-text-160.png)
+This project is maintained by yours truly.
 
-This project is maintained and funded by Nimble.
+Inspired by the [project] of Thoughtbot & Nimble.
 
-Inspired by the [project] of Thoughtbot.
-
-We love open source and do our part in sharing our work with the community!
-See [our other projects][community] or [hire our team][hire] to help build your product.
-
-[project]: https://github.com/thoughtbot/laptop
-[community]: https://github.com/nimblehq
-[hire]: https://nimblehq.co/
+[project]: https://github.com/thoughtbot/laptop-setup
