@@ -4,7 +4,7 @@ One-liner - what does this change?
 
 ## Links
 
-- Basecamp:
+- Link:
 - Other Specs details:
 
 ## Changes
