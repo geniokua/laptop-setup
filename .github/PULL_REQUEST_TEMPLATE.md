@@ -15,7 +15,7 @@ One-liner - what does this change?
 
 ## Related Changes
 
-- Does this have a dependant MR?
+- Does this have a dependant PR?
 
 ## Dev Testing
 
