@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="Bitcoin logo" src="https://assets.nimblehq.co/logo/light/logo-light-text-320.png" />
+  <img alt="Bitcoin logo" src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" />
 </p>
 
 ---
