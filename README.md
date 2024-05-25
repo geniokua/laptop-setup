@@ -1,7 +1,4 @@
-<p align="center">
-  <img alt="Bitcoin logo" src="https://assets.coingecko.com/coins/images/1/standard/bitcoin.png" />
-</p>
-
+# laptop-setup: Easy setup for your MacOS dev machine
 ---
 
 **laptop-setup/mac** is a script to set up a macOS environment for web & mobile development.
