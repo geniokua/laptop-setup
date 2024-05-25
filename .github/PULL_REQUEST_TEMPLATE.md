@@ -1,13 +1,28 @@
-https://github.com/Tranqeurah/laptop-setup/issues/??
+# Summary
 
-## What happened
+One-liner - what does this change?
 
-Describe the big picture of your changes here to communicate to the team why we should accept this pull request.
+## Links
 
-## Insight
+- Basecamp:
+- Other Specs details:
 
-Describe in details how to test the changes, which solution you tried but did not go with, referenced documentation is welcome as well.
+## Changes
 
-## Proof Of Work
+- What does this add?
+- What does this deprecate?
+- What does this improve?
 
-Show us the implementation: screenshots, gif, etc.
+## Related Changes
+
+- Does this have a dependant MR?
+
+## Dev Testing
+
+- Screenshots
+- Video Recordings
+- User Flow Diagrams
+
+## Feedback Needed
+
+- Any additional request for details and implementation
