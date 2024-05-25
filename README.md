@@ -233,4 +233,4 @@ This project is maintained by yours truly.
 
 Inspired by the [project] of Thoughtbot & Nimble.
 
-[project]: https://github.com/thoughtbot/laptop-setup
+[project]: https://github.com/thoughtbot/laptop
