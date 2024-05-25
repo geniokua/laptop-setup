@@ -4,7 +4,7 @@
 
 ---
 
-**laptop-setup/mac** is a script to set up a macOS environment for web development.
+**laptop-setup/mac** is a script to set up a macOS environment for web & mobile development.
 
 The script is idempotent: It can run multiple times on the same machine safely.
 It installs, upgrades, or skips packages
