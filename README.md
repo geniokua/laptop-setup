@@ -1,4 +1,5 @@
 # laptop-setup: Easy setup for your MacOS dev machine
+
 ---
 
 **laptop-setup/mac** is a script to set up a macOS environment for web & mobile development.
@@ -168,7 +169,7 @@ It should take less than 15 minutes to install (depending on your machine and in
 
 ### M1 incompatible dependecies
 
-- [Keybase] to have encrypted team communication
+- None.
 
 It will omit all these dependencies above while running the script in the M1 machines.
 
