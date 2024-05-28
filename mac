@@ -284,6 +284,7 @@ append_general_dependencies() {
     brew "tree"
     brew "ripgrep"
     brew "lazygit"
+    brew "fzf"
 
     # GitHub extensions
     brew "gh"
