@@ -106,6 +106,9 @@ config_zsh() {
 
     prepend_to_zshrc 'source ~/.aliases'
 
+    # to enable fzf as ohmyzsh plugin
+    sed -i '' '/^plugins=/ s/)$/ fzf)/' ~/.zshrc
+
     # for https://github.com/rails/rails/issues/38560
     append_to_zshrc 'export PGGSSENCMODE="disable"'
 
