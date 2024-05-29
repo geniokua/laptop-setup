@@ -22,7 +22,7 @@ Older versions may work but aren't regularly tested. This script is tested on th
 Download, review, then execute the script:
 
 ```bash
-curl --remote-name https://raw.githubusercontent.com/tengkera/laptop-setup/master/mac
+curl --remote-name https://raw.githubusercontent.com/geniokua/laptop-setup/master/mac
 less mac
 bash mac 2>&1 | tee ~/laptop.log
 ```
@@ -202,7 +202,7 @@ for more customization examples.
 Your last Laptop run will be saved to `~/laptop.log`.
 Read through it to see if you can debug the issue yourself.
 If not, copy the lines where the script failed into a
-[new GitHub Issue](https://github.com/tengkera/laptop-setup/issues/new) for us.
+[new GitHub Issue](https://github.com/geniokua/laptop-setup/issues/new) for us.
 Or, attach the whole log file as an attachment.
 
 ## Contributing
