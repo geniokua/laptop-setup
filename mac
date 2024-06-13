@@ -298,6 +298,7 @@ append_general_dependencies() {
     cask "visual-studio-code" unless File.directory?("/Applications/Visual Studio Code.app")
     brew "nvim"
     cask "livebook"
+    brew "hugo"
 
     # Programming language prerequisites and package managers
     brew "libyaml" # should come after openssl
