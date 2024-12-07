@@ -303,6 +303,7 @@ append_general_dependencies() {
     # Programming language prerequisites and package managers
     brew "libyaml" # should come after openssl
     brew "coreutils"
+    brew "golangci-lint"
 EOF
 
   if [ "$ARCH" != "arm64" ]; then
